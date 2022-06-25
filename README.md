@@ -5,7 +5,11 @@ Transformer-based POS-tagging model for Udmurt. Based on the `bert-base-multilin
 
 **NB: the [training data](http://udmurt.web-corpora.net/) used in this project is not a public dataset but is available for researchers by request to the owner. The following code is organized based on an assumption that the raw files are in the `data_raw` folder and after preprocessing the are in the `data` folder.**
 
-> Large files (such as model and tokenizer) are stored only in `with_models` branch. The other files are identical among the branches. 
+The model is temporarily stored on Google Drive. You may download it [here](https://drive.google.com/file/d/10zolxyFu52JI78kyVVRY0ub7SJ4BXZtf/view) or via command line (requires `gdown`):
+
+```bash
+gdown -O "models/udm_morph_tagger.model" "10zolxyFu52JI78kyVVRY0ub7SJ4BXZtf" 
+```
 
 - BERT pretraining: [Extending_BERT.ipynb](https://github.com/ulyanaisaeva/udmurt-transformer-parser/blob/main/Extending_BERT.ipynb)
 - POS-tagger training: [Train_POStagger.ipynb](https://github.com/ulyanaisaeva/udmurt-transformer-parser/blob/main/Train_POStagger.ipynb)
