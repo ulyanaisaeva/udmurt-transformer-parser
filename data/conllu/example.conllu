@@ -1,0 +1,31 @@
+# sent_id = 0
+# text = шуэм аслыз: «Мон – эгыр, корт тӥрлыкъёс».
+1	шуэм	шуыны	VERB	_	Evident=Fh|Number=Sing|Person=3	0	root	_	сказать
+2	аслыз	ас	PRON	_	Case=Dat|Number[psor]=Sing|Person[psor]=3	1	punct	_	сам,_свой
+3	:	:	PUNCT	_	_	2	punct	_	_
+4	«	«	PUNCT	_	_	3	punct	_	_
+5	Мон	мон	PRON	_	Case=Nom|Number=Sing	4	punct	_	я
+6	–	–	PUNCT	_	_	5	punct	_	_
+7	эгыр	эгыр	NOUN	_	Case=Nom|Number=Sing	6	punct	_	уголь
+8	,	,	PUNCT	_	_	7	punct	_	_
+9	корт	корт	NOUN	_	Case=Nom|Number=Sing	8	punct	_	железо;_противень
+10	тӥрлыкъёс	тӥрлык	NOUN	_	Case=Nom|Number=Plur	9	punct	_	инструмент,_орудие;_изделие,_вещь
+11	».	».	PUNCT	_	_	10	punct	_	_
+
+# sent_id = 1
+# text = Быгы мукет удмурт гуртъёслэсь чик уг висъяськы уг, Ижкарлэсь но со кыдёкын.
+1	Быгы	быгыны	VERB	_	Mood=Imp|Number=Sing	0	root	_	1._ударить_2._сбить
+2	мукет	мукет	ADJ	_	_	1	punct	_	другой
+3	удмурт	удмурт	NOUN	_	Case=Nom|Number=Sing	2	punct	_	удмурт
+4	гуртъёслэсь	гурт	NOUN	_	Case=Abl|Number=Plur	3	punct	_	деревня
+5	чик	чик	ADV	_	_	4	punct	_	совершенно,_совсем
+6	уг	уг	VERB	_	_	5	punct	_	не
+7	висъяськы	висъяны	VERB	_	Number=Sing|Person=3|Polarity=Neg|Tense=Pres	6	punct	_	перегородить;_отделить,_выделить
+8	уг	уг	VERB	_	_	7	punct	_	не
+9	,	,	PUNCT	_	_	8	punct	_	_
+10	Ижкарлэсь	Ижкар	PROPN	_	Case=Abl|Number=Sing	9	punct	_	Ижевск
+11	но	но	SCONJ	_	_	10	punct	_	и
+12	со	со	PRON	_	Case=Nom|Number=Sing	11	punct	_	он/она/оно;_тот,_этот
+13	кыдёкын	кыдёк-	ADV	_	Case=Loc|Number=Sing	12	punct	_	издалека/далеко/вдаль
+14	.	.	PUNCT	_	_	13	punct	_	_
+
