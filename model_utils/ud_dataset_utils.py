@@ -6,6 +6,29 @@ from collections import Counter
 from torch.utils.data.dataset import Dataset
 
 
+def read_infile(infile):
+    answer, sent, labels = [], [], []
+    with open(infile, "r", encoding="utf8") as fin:
+        for line in fin:
+            line = line.strip()
+            if line == "":
+                if len(sent) > 0:
+                    answer.append({"words": sent, "labels": labels})
+                sent, labels = [], []
+                continue
+            elif line[:1] == "#":
+                continue
+            splitted = line.split("\t")
+            if not splitted[0].isdigit():
+                continue
+            tag = splitted[3] if splitted[5] == "_" else f"{splitted[3]},{splitted[5]}"
+            sent.append(splitted[1])
+            labels.append(tag)
+    if len(sent) > 0:
+        answer.append({"words": sent, "labels": labels})
+    return answer
+
+
 def make_last_subtoken_mask(mask):
     mask = mask[1:-1]
     is_last_word = [False] + list((first != second) for first, second in zip(mask[:-1], mask[1:])) + [True, False]
