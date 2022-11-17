@@ -1,12 +1,23 @@
 import itertools
 import numpy as np
-import numpy as np
+import re
 import torch
 from collections import Counter
 from torch.utils.data.dataset import Dataset
+from typing import List
 
 
-def read_infile(infile):
+def read_infile(infile, keep_ambiguity=False):
+
+    def split_tag_variants(pos, feats):
+        pos_vars = [re.sub("\d+\)", "", s) for s in pos.split("//")]
+        feats_vars = [re.sub("\d+\)", "", s) for s in feats.split("//")]
+        if len(pos_vars) < len(feats_vars):
+            pos_vars = [pos_vars[0]] * len(feats_vars)
+        elif len(pos_vars) > len(feats_vars):
+            feats_vars = [feats_vars[0]] * len(pos_vars)
+        return [f'{p},{f}' if f not in ["", "_"] else p for p, f in zip(pos_vars, feats_vars)]
+
     answer, sent, labels = [], [], []
     with open(infile, "r", encoding="utf8") as fin:
         for line in fin:
@@ -21,9 +32,13 @@ def read_infile(infile):
             splitted = line.split("\t")
             if not splitted[0].isdigit():
                 continue
-            tag = splitted[3] if splitted[5] == "_" else f"{splitted[3]},{splitted[5]}"
             sent.append(splitted[1])
-            labels.append(tag)
+            if keep_ambiguity:
+                tag_list = split_tag_variants(splitted[3], splitted[5])
+                labels.append(tag_list)
+            else:
+                tag = splitted[3] if splitted[5] in ["", "_"] else f"{splitted[3]},{splitted[5]}"
+                labels.append(tag)
     if len(sent) > 0:
         answer.append({"words": sent, "labels": labels})
     return answer
@@ -53,19 +68,40 @@ def pad_tensors(tensors, pad=0):
     return torch.stack(tensors, axis=0)
 
 
+class TagEncoder:
+
+    def __init__(self, tags=None, unk_index=None, ignore_index=None) -> None:
+        self.tags_ = tags
+        self.tag_indexes_ = None
+        self.unk_index = unk_index
+        self.ignore_index = ignore_index
+        self.n_unique_indexes = None
+        self.n_encoded_indexes = len(self.tags_) if self.tags_ is not None else None
+    
+    def fit(self, tag_list: List[str], min_count: int = None, additional_tags: List[str] = None) -> None:
+        if isinstance(tag_list[0], list):
+            tag_list = list(itertools.chain.from_iterable(tag_list))
+        if self.tags_ is None:
+            tag_counts = Counter(tag_list)
+            self.tags_ = additional_tags + [x for x, count in tag_counts.items() if count >= min_count]
+        self.tag_indexes_ = {tag: i for i, tag in enumerate(self.tags_)}
+        self.n_encoded_indexes = len(self.tags_)
+        self.n_unique_indexes = len(tag_counts)
+        print(f"Fitted TagEncoder with {self.n_encoded_indexes} tags ({self.n_unique_indexes - self.n_encoded_indexes + len(additional_tags)} ignored according to `min_count = {min_count}`).")
+    
+    def encode(self, tag: List[str]) -> List[List[int]]:
+        return self.tag_indexes_.get(tag, self.unk_index)
+
+
 class UDDataset(Dataset):
 
     def __init__(self, data, tokenizer, min_count=3, tags=None):
         self.data = data
         self.tokenizer = tokenizer
-        if tags is None:
-            tag_counts = Counter([tag for elem in data for tag in elem["labels"]])
-            self.tags_ = ["<PAD>", "<UNK>"] + [x for x, count in tag_counts.items() if count >= min_count]
-        else:
-            self.tags_ = tags
-        self.tag_indexes_ = {tag: i for i, tag in enumerate(self.tags_)}
-        self.unk_index = 1
-        self.ignore_index = -100
+        self.tag_encoder = TagEncoder(tags, unk_index=1, ignore_index=-100)
+        data_labels = list(itertools.chain.from_iterable([elem["labels"] for elem in data]))
+        self.tag_encoder.fit(data_labels,
+                             min_count=min_count, additional_tags=["<PAD>", "<UNK>"])
 
     def __len__(self):
         return len(self.data)
@@ -76,9 +112,34 @@ class UDDataset(Dataset):
         last_subtoken_mask = make_last_subtoken_mask(tokenization.word_ids())
         answer = {"input_ids": tokenization["input_ids"], "mask": last_subtoken_mask}
         if "labels" in item:
-            labels = [self.tag_indexes_.get(tag, self.unk_index) for tag in item["labels"]]
-            zero_labels = np.array([self.ignore_index] * len(tokenization["input_ids"]), dtype=int)
+            labels = [self.tag_encoder.encode(tag) for tag in item["labels"]]
+            zero_labels = np.array([self.tag_encoder.ignore_index] * len(tokenization["input_ids"]), dtype=int)
             zero_labels[last_subtoken_mask] = labels
+            answer["y"] = zero_labels
+        return answer
+
+
+class UDDatasetWithAmbiguity(UDDataset):
+    def __init__(self, data, tokenizer, min_count=3, tags=None):
+        super().__init__(data, tokenizer, min_count=min_count, tags=tags)
+
+    def __getitem__(self, index):
+        item = self.data[index]
+        tokenization = self.tokenizer(item["words"], is_split_into_words=True)
+        last_subtoken_mask = make_last_subtoken_mask(tokenization.word_ids())
+        answer = {"input_ids": tokenization["input_ids"], "mask": last_subtoken_mask}
+        if "labels" in item:
+            zero_labels = np.full((len(tokenization["input_ids"]), self.tag_encoder.n_encoded_indexes), 
+                                       0, dtype=int)#.tolist()  # zeros of shape (W, K)
+            assert len(zero_labels) == len(last_subtoken_mask)
+            label_idx = 0  # label index from initial tag sequence (to skip unmasked tokens)
+            for mask_idx, mask_value in enumerate(last_subtoken_mask):
+                if mask_value:
+                    # encode tags for selected word
+                    label_variants_encoded = [self.tag_encoder.encode(tag) for tag in item["labels"][label_idx]]
+                    label_variants_encoded = sorted(list(set(label_variants_encoded)))
+                    zero_labels[mask_idx, label_variants_encoded] = 1
+                    label_idx += 1
             answer["y"] = zero_labels
         return answer
 
