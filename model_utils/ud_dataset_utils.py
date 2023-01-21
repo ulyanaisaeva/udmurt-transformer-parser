@@ -58,9 +58,9 @@ def pad_tensor(vec, length, dim, pad_symbol):
 
 
 def pad_tensors(tensors, pad=0):
-    if isinstance(tensors[0], (int, np.integer)):
+    if isinstance(tensors[0], int):
         return torch.LongTensor(tensors)
-    elif isinstance(tensors[0], (float, np.float)):
+    elif isinstance(tensors[0], float):
         return torch.Tensor(tensors)
     tensors = [torch.LongTensor(tensor) for tensor in tensors]
     L = max(tensor.shape[0] for tensor in tensors)
@@ -81,8 +81,8 @@ class TagEncoder:
     def fit(self, tag_list: List[str], min_count: int = None, additional_tags: List[str] = None) -> None:
         if isinstance(tag_list[0], list):
             tag_list = list(itertools.chain.from_iterable(tag_list))
+        tag_counts = Counter(tag_list)
         if self.tags_ is None:
-            tag_counts = Counter(tag_list)
             self.tags_ = additional_tags + [x for x, count in tag_counts.items() if count >= min_count]
         self.tag_indexes_ = {tag: i for i, tag in enumerate(self.tags_)}
         self.n_encoded_indexes = len(self.tags_)
@@ -166,9 +166,10 @@ class FieldBatchDataLoader:
                 lengths = [len(list(x.values())[0]) for x in self.X]
             order = np.argsort(lengths)
             batched_order = np.array([order[start:start+self.batch_size] 
-                                      for start in range(0, len(self.X), self.batch_size)])
+                                      for start in range(0, len(self.X)-self.batch_size+1, self.batch_size)])
+            rest = np.array(order[(len(self.X)//self.batch_size)*self.batch_size:])
             np.random.shuffle(batched_order)
-            self.order = np.fromiter(itertools.chain.from_iterable(batched_order), dtype=int)
+            self.order = np.concatenate((np.fromiter(itertools.chain.from_iterable(batched_order), dtype=int), rest))
         else:
             self.order = np.arange(len(self.X))
             np.random.shuffle(self.order)
