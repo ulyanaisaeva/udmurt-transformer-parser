@@ -41,7 +41,7 @@ gdown -O "models/udm_morph_tagger.model" "10zolxyFu52JI78kyVVRY0ub7SJ4BXZtf"
 </details>
 
 
-### Usage (requires CPU)
+### Usage (requires GPU)
 
 ```python
 import pickle
