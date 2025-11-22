@@ -2,3 +2,7 @@ datasets
 numpy
 torch
 transformers
+pyyaml
+tokenizers
+tqdm
+huggingface_hub

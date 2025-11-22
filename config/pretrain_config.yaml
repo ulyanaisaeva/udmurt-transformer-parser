@@ -1,0 +1,46 @@
+compute_environment: LOCAL_MACHINE
+debug: false
+distributed_type: MULTI_GPU
+downcast_bf16: 'no'
+gpu_ids: all
+machine_rank: 0
+main_training_function: main
+mixed_precision: bf16
+num_machines: 1
+num_processes: 8
+rdzv_backend: static
+same_network: true
+tpu_env: []
+tpu_use_cluster: false
+tpu_use_sudo: false
+use_cpu: false
+
+# Paths and experiment settings (can be overridden via CLI arguments)
+paths:
+  tok_path: ""  # Path to tokenizer
+  model_path: ""  # Path to pretrained model
+  save_path: ""  # Path to save trained model
+  train_file: ""  # Path to training JSON file
+  valid_file: ""  # Path to validation JSON file
+
+experiment:
+  exp_name: ""  # Experiment name for ClearML
+
+# Training hyperparameters
+training:
+  learning_rate: 5e-5
+  per_device_train_batch_size: 16  # Adjust based on GPU memory and dataset size
+  per_device_eval_batch_size: 16
+  num_train_epochs: 5  # Adjust based on convergence and dataset size
+  weight_decay: 0.01
+  evaluation_strategy: "epoch"
+  save_strategy: "epoch"
+  logging_strategy: "steps"
+  logging_steps: 5
+  report_to: "clearml"
+  seed: 42
+  data_seed: 42
+  optim: "adamw_torch"
+  lr_scheduler_type: "linear"
+  save_total_limit: 1
+
